@@ -116,7 +116,7 @@ def callback(call):
                 call.message.chat.id,
                 " Спасибо за покупку за покупку! 💓\n\n"
                 "Твой гайд: (на гугл диске)🫶🏻\n"
-                "https://https://drive.google.com/file/d/1-pLgxJxFVs7emmeSOjtBtS9bxxiLHgLw/view?usp=sharing"
+                "https://drive.google.com/file/d/1-pLgxJxFVs7emmeSOjtBtS9bxxiLHgLw/view?usp=sharing"
             )
 
         else:
