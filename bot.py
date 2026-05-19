@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from flask import Flask
+from flask import Flask, request
 from threading import Thread
 from yookassa import Configuration, Payment
 import uuid
@@ -127,13 +127,21 @@ def callback(call):
             )
 
 
-def run_bot():
-    bot.infinity_polling()
+WEBHOOK_URL = "https://telegram-bot-lqa6.onrender.com"
 
+@app.route(f"/{TOKEN}", methods=["POST"])
+def webhook():
+    json_str = request.get_data().decode("UTF-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "!", 200
 
-bot_thread = Thread(target=run_bot)
-bot_thread.start()
+@app.route("/")
+def index():
+    return "Bot is running!"
 
+bot.remove_webhook()
+bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
 
 port = int(os.environ.get("PORT", 10000))
 app.run(host="0.0.0.0", port=port)
