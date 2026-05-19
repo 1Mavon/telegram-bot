@@ -2,9 +2,17 @@ import telebot
 from telebot import types
 from flask import Flask
 from threading import Thread
+from yookassa import Configuration, Payment
+import uuid
 import os
 
 TOKEN = '8855631374:AAGmsjmQdgOqKUFeYhztd9N5xBqLrh3aQuA'
+
+SHOP_ID = '1360096'
+SECRET_KEY = 'live_Iw292x0jqiPw1vYlUrCiRjnwy0yvtae63RKyWodY1ec'
+
+Configuration.account_id = SHOP_ID
+Configuration.secret_key = SECRET_KEY
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -16,75 +24,109 @@ def home():
     return "Bot is running!"
 
 
-# START
-
 @bot.message_handler(commands=['start'])
 def start(message):
 
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup = types.InlineKeyboardMarkup()
 
-    button1 = types.KeyboardButton("📥 Получить подборку")
-    button2 = types.KeyboardButton("📷 Instagram")
-    button3 = types.KeyboardButton("💬 Поддержка")
+    buy_button = types.InlineKeyboardButton(
+        " Купить гайд 💓",
+        callback_data="buy_guide"
+    )
 
-    markup.add(button1)
-    markup.add(button2, button3)
+    support_button = types.InlineKeyboardButton(
+        "💬 Поддержка",
+        url="https://t.me/polifees"
+    )
+
+    markup.add(buy_button)
+    markup.add(support_button)
 
     text = (
-        "🔥 <b>Подборка трендовых образов</b>\n\n"
-        "• готовые стильные луки\n"
-        "• ссылки на одежду\n"
-        "• актуальные тренды\n"
-        "• удобный PDF-файл\n\n"
-        "👇 Выбери действие:"
+        "В этом гайде:\n\n"
+
+        "— капсула на лето 2026\n"
+        "— 30 вариантов образов\n"
+        "— более 30 позиций одежды с ссылками на разный бюджет\n"
+        "— подборка стильной обуви и сумок на разный бюджет\n\n"
+
+        "Приобрести можно за 299₽ 👇🏻"
     )
 
     bot.send_message(
         message.chat.id,
         text,
-        parse_mode='HTML',
         reply_markup=markup
     )
 
 
-# BUTTONS
+@bot.callback_query_handler(func=lambda call: True)
+def callback(call):
 
-@bot.message_handler(content_types=['text'])
-def handle_text(message):
+    if call.data == "buy_guide":
 
-    if message.text == "📥 Получить подборку":
+        payment = Payment.create({
+            "amount": {
+                "value": "299.00",
+                "currency": "RUB"
+            },
+            "confirmation": {
+                "type": "redirect",
+                "return_url": "https://t.me/polifees_bot"
+            },
+            "capture": True,
+            "description": "Покупка гайда",
+            "metadata": {
+                "user_id": call.message.chat.id
+            }
+        }, uuid.uuid4())
 
-        file = open("outfits.pdf", "rb")
+        pay_url = payment.confirmation.confirmation_url
 
-        bot.send_document(
-            message.chat.id,
-            file,
-            caption="🔥 Твоя подборка готова"
+        markup = types.InlineKeyboardMarkup()
+
+        pay_button = types.InlineKeyboardButton(
+            "💳 Оплатить 299₽",
+            url=pay_url
         )
 
-    elif message.text == "📷 Instagram":
+        check_button = types.InlineKeyboardButton(
+            "✅ Я оплатил",
+            callback_data=f"check_{payment.id}"
+        )
+
+        markup.add(pay_button)
+        markup.add(check_button)
 
         bot.send_message(
-            message.chat.id,
-            "Instagram: https://instagram.com/polifees"
+            call.message.chat.id,
+            "Для получения гайда сначала оплати покупку 👇🏻",
+            reply_markup=markup
         )
 
-    elif message.text == "💬 Поддержка":
+    elif call.data.startswith("check_"):
 
-        bot.send_message(
-            message.chat.id,
-            "По всем вопросам: @polifees"
-        )
+        payment_id = call.data.replace("check_", "")
 
-    else:
+        payment = Payment.find_one(payment_id)
 
-        bot.send_message(
-            message.chat.id,
-            "Нажми кнопку ниже 👇"
-        )
+        if payment.status == "succeeded":
 
+            file = open("outfits.pdf", "rb")
 
-# BOT THREAD
+            bot.send_document(
+                call.message.chat.id,
+                file,
+                caption=" Спасибо за покупку 💓"
+            )
+
+        else:
+
+            bot.send_message(
+                call.message.chat.id,
+                "Оплата пока не найдена"
+            )
+
 
 def run_bot():
     bot.infinity_polling()
@@ -92,12 +134,6 @@ def run_bot():
 
 bot_thread = Thread(target=run_bot)
 bot_thread.start()
-
-
-# FLASK
-
-port = int(os.environ.get("PORT", 10000))
-app.run(host="0.0.0.0", port=port)
 
 
 port = int(os.environ.get("PORT", 10000))
