@@ -112,12 +112,11 @@ def callback(call):
 
         if payment.status == "succeeded":
 
-            file = open("outfits.pdf", "rb")
-
-            bot.send_document(
+            bot.send_message(
                 call.message.chat.id,
-                file,
-                caption=" Спасибо за покупку 💓"
+                " Спасибо за покупку за покупку! 💓\n\n"
+                "Твой гайд: (на гугл диске)🫶🏻\n"
+                "https://https://drive.google.com/file/d/1-pLgxJxFVs7emmeSOjtBtS9bxxiLHgLw/view?usp=sharing"
             )
 
         else:
