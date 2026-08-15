@@ -9,7 +9,6 @@ import os
 # НАСТРОЙКИ
 # =========================
 
-# Эти значения нужно добавить в Render → Environment Variables
 TOKEN = os.environ.get("BOT_TOKEN")
 SHOP_ID = os.environ.get("SHOP_ID")
 SECRET_KEY = os.environ.get("YOOKASSA_SECRET_KEY")
@@ -26,18 +25,18 @@ Configuration.secret_key = SECRET_KEY
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-# PDF должен лежать рядом с bot.py в проекте Render
 GUIDE_FILE = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "SHOPPING LIST FOR AUTUMN'26.pdf"
 )
 
+START_IMAGE = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "Бэк.png"
+)
+
 GUIDE_PRICE = "350.00"
 
-
-# =========================
-# ГЛАВНАЯ СТРАНИЦА
-# =========================
 
 @app.route("/")
 def home():
@@ -49,12 +48,12 @@ def start(message):
     markup = types.InlineKeyboardMarkup()
 
     buy_button = types.InlineKeyboardButton(
-        "Забрать капсулу за 350₽ 🛍",
+        "Приобрести",
         callback_data="buy_guide"
     )
 
     support_button = types.InlineKeyboardButton(
-        "💬 Поддержка",
+        "Поддержка",
         url="https://t.me/polifees"
     )
 
@@ -62,30 +61,32 @@ def start(message):
     markup.add(support_button)
 
     text = (
-        "SHOPPING LIST FOR AUTUMN’26 🍂\n\n"
+        "SHOPPING LIST FOR AUTUMN’26🖤\n\n"
         "— стильная осенняя капсула с 35+ готовыми образами "
         "и ссылками на одежду, обувь и сумки под разный бюджет\n\n"
         "— подойдет для учебы, работы в офисе и просто для тех, "
-        "кто хочет выглядеть стильно этой осенью\n\n"
-        "Забрать капсулу за 350₽ 👇🏻"
+        "кто хочет выглядеть стильно этой осенью"
     )
 
-    bot.send_message(
-        message.chat.id,
-        text,
-        reply_markup=markup
-    )
+    if os.path.exists(START_IMAGE):
+        with open(START_IMAGE, "rb") as photo:
+            bot.send_photo(
+                message.chat.id,
+                photo,
+                caption=text,
+                reply_markup=markup
+            )
+    else:
+        bot.send_message(
+            message.chat.id,
+            text,
+            reply_markup=markup
+        )
 
-
-# =========================
-# ОПЛАТА
-# =========================
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
-
     if call.data == "buy_guide":
-
         payment = Payment.create({
             "amount": {
                 "value": GUIDE_PRICE,
@@ -103,16 +104,15 @@ def callback(call):
         }, uuid.uuid4())
 
         pay_url = payment.confirmation.confirmation_url
-
         markup = types.InlineKeyboardMarkup()
 
         pay_button = types.InlineKeyboardButton(
-            "💳 Оплатить 350₽",
+            "Оплатить 350₽",
             url=pay_url
         )
 
         check_button = types.InlineKeyboardButton(
-            "✅ Я оплатил",
+            "Я оплатил",
             callback_data=f"check_{payment.id}"
         )
 
@@ -126,14 +126,12 @@ def callback(call):
         )
 
     elif call.data.startswith("check_"):
-
         payment_id = call.data.replace("check_", "")
 
         try:
             payment = Payment.find_one(payment_id)
 
             if payment.status == "succeeded":
-
                 if not os.path.exists(GUIDE_FILE):
                     bot.send_message(
                         call.message.chat.id,
@@ -152,7 +150,6 @@ def callback(call):
                             "Приятного шопинга! 🍂"
                         )
                     )
-
             else:
                 bot.send_message(
                     call.message.chat.id,
@@ -167,10 +164,6 @@ def callback(call):
                 "напиши в поддержку: @polifees"
             )
 
-
-# =========================
-# WEBHOOK
-# =========================
 
 WEBHOOK_URL = "https://telegram-bot-lqa6.onrender.com"
 
