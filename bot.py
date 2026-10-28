@@ -119,7 +119,7 @@ def callback(call):
         )
 
         check_button = types.InlineKeyboardButton(
-            "Я оплатил",
+            "Я оплатила",
             callback_data=f"check_{payment.id}"
         )
 
@@ -152,9 +152,7 @@ def callback(call):
                         call.message.chat.id,
                         guide,
                         caption=(
-                            "Спасибо за покупку! 🫶🏻\n\n"
-                            "Твоя SHOPPING LIST FOR AUTUMN’26 уже здесь.\n"
-                            "Приятного шопинга! 🍂"
+                            "Спасибо за покупку!🤍❄️\n\n"
                         )
                     )
             else:
