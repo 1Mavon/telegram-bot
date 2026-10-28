@@ -60,7 +60,7 @@ def start(message):
     markup.add(buy_button)
     markup.add(support_button)
 
-       text = (
+    text = (
         "SHOPPING LIST FOR WINTER\n\n"
         "Капсула на холодную осень/зиму’26\n\n"
         "В этой капсуле будет:\n"
